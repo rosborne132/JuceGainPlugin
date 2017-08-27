@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>SchemeUserState</key>
+	<dict>
+		<key>gainPlugin - AU.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>gainPlugin - All.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>0</integer>
+		</dict>
+		<key>gainPlugin - Shared Code.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>4</integer>
+		</dict>
+		<key>gainPlugin - Standalone Plugin.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
+		<key>gainPlugin - VST.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>3481105D89E7BF9B20257614</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>7AB2FAB690A3BCE6F6D23036</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>7BDABECF3B3E1E3096685E1C</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>DB2097BF80ADEE36FC935727</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>E4C52C610C2585992FA33167</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+	</dict>
+</dict>
+</plist>
