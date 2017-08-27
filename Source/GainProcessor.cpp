@@ -37,20 +37,38 @@ public:
     {
         addParameter (gain = new AudioParameterFloat ("gain", // parameterID
                                                       "Gain", // parameter name
-                                                      0.0f,   // mininum value
-                                                      1.0f,   // maximum value
+                                                      NormalisableRange<float> (0.0f,1.0f),
                                                       0.5f)); // default value
+        
+        addParameter (invertPhase = new AudioParameterBool ("invertPhase",
+                                                            "Invert Phase",
+                                                            false));
     }
 
     ~TutorialProcessor() {}
 
     //==============================================================================
-    void prepareToPlay (double, int) override {}
+    void prepareToPlay (double, int) override
+    {
+        const float phase = *invertPhase ? -1.0f : 1.0f;
+        previousGain = *gain * phase;
+    }
+    
     void releaseResources() override {}
-
+    
     void processBlock (AudioSampleBuffer& buffer, MidiBuffer&) override
     {
-        buffer.applyGain (*gain);
+        const float phase = *invertPhase ? -1.0f : 1.0f;
+        const float currentGain = *gain * phase;
+        if (currentGain == previousGain)
+        {
+            buffer.applyGain (currentGain);
+        }
+        else
+        {
+            buffer.applyGainRamp (0, buffer.getNumSamples(), previousGain, currentGain);
+            previousGain = currentGain;
+        }
     }
 
     //==============================================================================
@@ -73,17 +91,30 @@ public:
     //==============================================================================
     void getStateInformation (MemoryBlock& destData) override
     {
-        MemoryOutputStream (destData, true).writeFloat (*gain);
+        ScopedPointer<XmlElement> xml (new XmlElement ("ParamTutorial"));
+        xml->setAttribute ("gain", (double) *gain);
+        xml->setAttribute ("invertPhase", *invertPhase);
+        copyXmlToBinary (*xml, destData);
     }
 
     void setStateInformation (const void* data, int sizeInBytes) override
     {
-        *gain = MemoryInputStream (data, static_cast<size_t> (sizeInBytes), false).readFloat();
+        ScopedPointer<XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+        if (xmlState != nullptr)
+        {
+            if (xmlState->hasTagName ("ParamTutorial"))
+            {
+                *gain = (float) xmlState->getDoubleAttribute ("gain", 1.0);
+                *invertPhase = xmlState->getBoolAttribute ("invertPhase", false); // [5]
+            }
+        }
     }
     
 private:
     //==============================================================================
     AudioParameterFloat* gain;
+    AudioParameterBool* invertPhase;
+    float previousGain;
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TutorialProcessor)

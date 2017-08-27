@@ -24,9 +24,11 @@
 
 class GenericEditor : public AudioProcessorEditor,
                       public Slider::Listener,
+                      public Button::Listener,
                       private Timer
 {
 public:
+    
     enum
     {
         kParamControlHeight = 40,
@@ -45,26 +47,36 @@ public:
             if (const AudioParameterFloat* param = dynamic_cast<AudioParameterFloat*> (params[i]))
             {
                 Slider* aSlider;
-
                 paramSliders.add (aSlider = new Slider (param->name));
                 aSlider->setRange (param->range.start, param->range.end);
                 aSlider->setSliderStyle (Slider::LinearHorizontal);
                 aSlider->setValue (*param);
-
                 aSlider->addListener (this);
                 addAndMakeVisible (aSlider);
-
                 Label* aLabel;
                 paramLabels.add (aLabel = new Label (param->name, param->name));
                 addAndMakeVisible (aLabel);
+                controls.add (aSlider);  // [11]
+            }
+            else if (const AudioParameterBool* param = dynamic_cast<AudioParameterBool*> (params[i])) // [10]
+            {
+                ToggleButton* aButton;
+                paramToggles.add (aButton = new ToggleButton (param->name));
+                aButton->setToggleState (*param, dontSendNotification);
+                aButton->addListener (this);
+                addAndMakeVisible (aButton);
+                controls.add (aButton);
             }
         }
 
         noParameterLabel.setJustificationType (Justification::horizontallyCentred | Justification::verticallyCentred);
         noParameterLabel.setFont (noParameterLabel.getFont().withStyle (Font::italic));
-
+        
+        
         setSize (kParamSliderWidth + kParamLabelWidth,
-                 jmax (1, kParamControlHeight * paramSliders.size()));
+                jmax (1, kParamControlHeight * paramSliders.size()));
+        
+        
 
         if (paramSliders.size() == 0)
             addAndMakeVisible (noParameterLabel);
@@ -80,14 +92,20 @@ public:
     {
         Rectangle<int> r = getLocalBounds();
         noParameterLabel.setBounds (r);
-
-        for (int i = 0; i < paramSliders.size(); ++i)
+        for (int i = 0; i < controls.size(); ++i)
         {
             Rectangle<int> paramBounds = r.removeFromTop (kParamControlHeight);
-            Rectangle<int> labelBounds = paramBounds.removeFromLeft (kParamLabelWidth);
-
-            paramLabels[i]->setBounds (labelBounds);
-            paramSliders[i]->setBounds (paramBounds);
+            if (Slider* aSlider = dynamic_cast<Slider*> (controls[i]))
+            {
+                Rectangle<int> labelBounds = paramBounds.removeFromLeft (kParamLabelWidth);
+                const int sliderIndex = paramSliders.indexOf (aSlider);
+                paramLabels[sliderIndex]->setBounds (labelBounds);
+                aSlider->setBounds (paramBounds);
+            }
+            else if (ToggleButton* aButton = dynamic_cast<ToggleButton*> (controls[i]))
+            {
+                aButton->setBounds (paramBounds);
+            }
         }
     }
 
@@ -115,18 +133,32 @@ public:
         if (AudioParameterFloat* param = getParameterForSlider (slider))
             param->endChangeGesture();
     }
+    
+    void buttonClicked (Button* button) override
+    {
+        if (AudioParameterBool* param = getParameterForButton (button))
+        {
+            param->beginChangeGesture();
+            *param = button->getToggleState();
+            param->endChangeGesture();
+        }
+    }
 
 private:
     void timerCallback() override
     {
         const OwnedArray<AudioProcessorParameter>& params = getAudioProcessor()->getParameters();
-        
-        for (int i = 0; i < params.size(); ++i)
+        for (int i = 0; i < controls.size(); ++i)
         {
-            if (const AudioParameterFloat* param = dynamic_cast<AudioParameterFloat*> (params[i]))
+            if (Slider* slider = dynamic_cast<Slider*> (controls[i]))
             {
-                if (i < paramSliders.size())
-                    paramSliders[i]->setValue (*param);
+                AudioParameterFloat* param = static_cast<AudioParameterFloat*> (params[i]);
+                slider->setValue ((double) *param, dontSendNotification);
+            }
+            else if (Button* button = dynamic_cast<Button*> (controls[i]))
+            {
+                AudioParameterBool* param = static_cast<AudioParameterBool*> (params[i]);
+                button->setToggleState (*param, dontSendNotification);
             }
         }
     }
@@ -134,10 +166,19 @@ private:
     AudioParameterFloat* getParameterForSlider (Slider* slider)
     {
         const OwnedArray<AudioProcessorParameter>& params = getAudioProcessor()->getParameters();
-        return dynamic_cast<AudioParameterFloat*> (params[paramSliders.indexOf (slider)]);
+        return dynamic_cast<AudioParameterFloat*> (params[controls.indexOf (slider)]); // [12]
+    }
+    
+    AudioParameterBool* getParameterForButton (Button* button)
+    {
+        const OwnedArray<AudioProcessorParameter>& params = getAudioProcessor()->getParameters();
+        return dynamic_cast<AudioParameterBool*> (params[controls.indexOf (button)]);
     }
 
     Label noParameterLabel;
     OwnedArray<Slider> paramSliders;
     OwnedArray<Label> paramLabels;
+    OwnedArray<Button> paramToggles;
+    Array<Component*> controls;
+
 };
